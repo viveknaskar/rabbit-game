@@ -1,5 +1,7 @@
 # Rabbit Run!
 
+![Rabbit Run gameplay](assets/og-bg-rabbit-game.png)
+
 An endless browser game where a rabbit dodges tortoises across a world that travels through a full day, from dawn to deep night.
 
 Built with vanilla HTML5 Canvas. No libraries, no build tools, no external assets.
