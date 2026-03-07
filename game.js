@@ -504,6 +504,8 @@ function updateGame() {
 
     state.obstacles = state.obstacles.filter(o => o.x + o.width >= 0);
 
+    if (state.isGameOver) return;
+
     drawGround();
     drawRabbit();
 
@@ -523,6 +525,199 @@ function jump() {
     }
 }
 
+function drawGameOverTortoise(cx, cy) {
+    const shell  = '#4C7040';
+    const dshell = '#324A28';
+    const lshell = '#6A9A52';
+    const skin   = '#7A9840';
+    const dskin  = '#5A7830';
+
+    ctx.save();
+
+    // Shell behind head
+    ctx.fillStyle = dshell;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 24, 48, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = shell;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 12, 44, Math.PI, 0);
+    ctx.fill();
+
+    // Shell highlight
+    ctx.fillStyle = lshell;
+    ctx.beginPath();
+    ctx.arc(cx - 10, cy + 4, 22, Math.PI * 1.1, Math.PI * 1.88);
+    ctx.arc(cx - 4,  cy + 10, 14, Math.PI * 1.82, Math.PI * 1.1, true);
+    ctx.closePath();
+    ctx.fill();
+
+    // Shell plate lines
+    ctx.strokeStyle = dshell;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 40, cy + 12);
+    ctx.quadraticCurveTo(cx, cy - 10, cx + 40, cy + 12);
+    ctx.stroke();
+    [[-24,10],[-8,5],[8,5],[24,10]].forEach(([dx]) => {
+        ctx.beginPath();
+        ctx.moveTo(cx + dx, cy + 12);
+        ctx.quadraticCurveTo(cx + dx * 0.5, cy, cx + dx * 0.35, cy - 12);
+        ctx.stroke();
+    });
+
+    // Head
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head bottom shading
+    ctx.fillStyle = dskin;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 24, 26, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Laughing tears at eye corners
+    ctx.fillStyle = 'rgba(120,190,255,0.75)';
+    ctx.beginPath(); ctx.ellipse(cx - 24, cy - 1, 3, 5, 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 24, cy - 1, 3, 5, -0.4, 0, Math.PI * 2); ctx.fill();
+
+    // Laughing eyes  (^ arcs — opening faces upward)
+    ctx.strokeStyle = '#1A2010';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx - 13, cy - 9, 11, Math.PI + 0.38, 2 * Math.PI - 0.38);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + 13, cy - 9, 11, Math.PI + 0.38, 2 * Math.PI - 0.38);
+    ctx.stroke();
+
+    // Rosy cheeks
+    ctx.fillStyle = 'rgba(220,90,70,0.26)';
+    ctx.beginPath(); ctx.ellipse(cx - 27, cy + 3, 11, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 27, cy + 3, 11, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Open laughing mouth — filled bottom-semicircle
+    ctx.fillStyle = '#8B2020';
+    ctx.beginPath();
+    ctx.arc(cx, cy + 15, 17, 0, Math.PI);
+    ctx.fill();
+
+    // Teeth
+    ctx.fillStyle = '#F2EFE8';
+    ctx.beginPath(); ctx.roundRect(cx - 14, cy + 15, 12, 7, [0,0,3,3]); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(cx + 1,  cy + 15, 12, 7, [0,0,3,3]); ctx.fill();
+
+    // Mouth outline
+    ctx.strokeStyle = '#1A2010';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.arc(cx, cy + 15, 17, 0, Math.PI);
+    ctx.moveTo(cx - 17, cy + 15);
+    ctx.lineTo(cx + 17, cy + 15);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawGameOverRabbit(anchorX, anchorY) {
+    // anchorX/Y = where the rabbit's feet should land (top of tortoise shell)
+    const scale = 0.58;
+
+    ctx.save();
+    ctx.translate(anchorX - 25 * scale, anchorY - 65 * scale);
+    ctx.scale(scale, scale);
+
+    const cream  = '#EDE8DC';
+    const shadow = '#C8BEB0';
+    const white  = '#F8F6F2';
+    const pink   = '#F0A0B8';
+    const dpink  = '#D84070';
+
+    // Back ear
+    ctx.fillStyle = shadow;
+    ctx.beginPath(); ctx.roundRect(29, -23, 10, 31, [5,5,3,3]); ctx.fill();
+    ctx.fillStyle = pink;
+    ctx.beginPath(); ctx.roundRect(32, -19, 5, 23, [3,3,2,2]); ctx.fill();
+
+    // Front ear
+    ctx.fillStyle = cream;
+    ctx.beginPath(); ctx.roundRect(39, -26, 10, 34, [5,5,3,3]); ctx.fill();
+    ctx.fillStyle = pink;
+    ctx.beginPath(); ctx.roundRect(42, -22, 5, 26, [3,3,2,2]); ctx.fill();
+
+    // Fluffy tail
+    ctx.fillStyle = white;
+    ctx.beginPath(); ctx.arc(7, 35, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shadow;
+    ctx.beginPath(); ctx.arc(9, 38, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = white;
+    ctx.beginPath(); ctx.arc(6, 34, 5, 0, Math.PI * 2); ctx.fill();
+
+    // Body
+    ctx.fillStyle = cream;
+    ctx.beginPath(); ctx.roundRect(5, 20, 38, 36, 16); ctx.fill();
+
+    // Belly highlight
+    ctx.fillStyle = white;
+    ctx.beginPath(); ctx.ellipse(19, 39, 12, 13, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Legs — both feet down (seated/riding pose)
+    ctx.fillStyle = shadow;
+    ctx.beginPath(); ctx.roundRect(7,  50, 15, 12, [3,3,2,2]); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(4,  59, 22,  6, 3); ctx.fill();
+    ctx.fillStyle = cream;
+    ctx.beginPath(); ctx.roundRect(33, 50, 10, 12, [3,3,2,2]); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(30, 58, 14,  5, 3); ctx.fill();
+
+    // Head
+    ctx.fillStyle = cream;
+    ctx.beginPath(); ctx.roundRect(27, 4, 22, 22, 10); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(30, 18, 14, 8, 4); ctx.fill();
+
+    // Cheek / snout
+    ctx.fillStyle = white;
+    ctx.beginPath(); ctx.ellipse(45, 19, 6, 5, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Nose
+    ctx.fillStyle = dpink;
+    ctx.beginPath(); ctx.ellipse(49, 17, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Whiskers
+    ctx.strokeStyle = 'rgba(80,80,80,0.38)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(47, 15); ctx.lineTo(31, 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(47, 18); ctx.lineTo(31, 18); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(47, 21); ctx.lineTo(31, 24); ctx.stroke();
+
+    // Eye — sad, drooping (downward arc = closed sad squint)
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(40, 11, 5, 0, Math.PI * 2); ctx.fill();
+    // Sad closed eye: arc opening faces downward (U shape)
+    ctx.strokeStyle = shadow;
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(41, 9, 4, 0.25, Math.PI - 0.25); // brow furrow / sad squint
+    ctx.stroke();
+
+    // Sweat drop (embarrassed)
+    ctx.fillStyle = 'rgba(100,180,255,0.85)';
+    ctx.beginPath(); ctx.arc(27, 5, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(27, 2);
+    ctx.lineTo(25, -4);
+    ctx.lineTo(29, -4);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
 function gameOver() {
     state.isGameOver = true;
 
@@ -538,48 +733,76 @@ function gameOver() {
     }
     AudioManager.stop();
 
-    ctx.fillStyle = 'rgba(10, 30, 50, 0.72)';
+    // Dark overlay
+    ctx.fillStyle = 'rgba(8, 22, 40, 0.78)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const cw = 340, ch = 100;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 1.5;
+    // Tortoise face (left side) + defeated rabbit riding on top
+    drawGameOverTortoise(90, 108);
+    drawGameOverRabbit(90, 76);   // feet land on top of tortoise shell (y≈76)
+
+    // ── Speech bubble ─────────────────────────────────────────────
+    const bx = 148, by = 18, bw = 638, bh = 164, br = 14;
+    const tailMidY = 108;
+
+    // Tail triangle pointing left toward tortoise
+    ctx.fillStyle = 'rgba(255,255,255,0.93)';
     ctx.beginPath();
-    ctx.roundRect(cx - cw / 2, cy - ch / 2, cw, ch, 12);
+    ctx.moveTo(bx - 10, tailMidY);         // tip
+    ctx.lineTo(bx + 2,  tailMidY - 17);    // upper base
+    ctx.lineTo(bx + 2,  tailMidY + 17);    // lower base
+    ctx.closePath();
+    ctx.fill();
+
+    // Bubble body (drawn on top to seal the tail seam)
+    ctx.fillStyle = 'rgba(255,255,255,0.93)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, br);
     ctx.fill();
     ctx.stroke();
 
-    ctx.textAlign = 'center';
-    ctx.font = '20px "Press Start 2P", monospace';
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillText('GAME OVER', cx + 2, cy - 14 + 2);
-    ctx.fillStyle = '#FF6B6B';
-    ctx.fillText('GAME OVER', cx, cy - 14);
+    const tcx = bx + bw / 2;   // text center x
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.textAlign = 'center';
+
+    // Quote
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#3A5A6A';
+    ctx.fillText('Slow and steady', tcx, by + 38);
+    ctx.fillText('wins the race!', tcx, by + 58);
+
+    // Divider
+    ctx.strokeStyle = 'rgba(80,120,150,0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(cx - 120, cy + 6);
-    ctx.lineTo(cx + 120, cy + 6);
+    ctx.moveTo(bx + 30, by + 72);
+    ctx.lineTo(bx + bw - 30, by + 72);
     ctx.stroke();
 
-    // New best badge
+    // GAME OVER
+    ctx.font = '18px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillText('GAME OVER', tcx + 2, by + 100 + 2);
+    ctx.fillStyle = '#E04040';
+    ctx.fillText('GAME OVER', tcx, by + 100);
+
+    // New best badge or blank space
     if (isNewBest) {
         ctx.font = '8px "Press Start 2P", monospace';
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.fillText('✦ NEW BEST ✦', cx + 1, cy + 22 + 1);
-        ctx.fillStyle = '#FFD700';
-        ctx.fillText('✦ NEW BEST ✦', cx, cy + 22);
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillText('✦ NEW BEST ✦', tcx + 1, by + 125 + 1);
+        ctx.fillStyle = '#C8920A';
+        ctx.fillText('✦ NEW BEST ✦', tcx, by + 125);
     }
 
-    ctx.font = '9px "Press Start 2P", monospace';
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillText('PRESS  R  TO  RESTART', cx + 1, cy + 38 + 1);
-    ctx.fillStyle = '#A8D8EA';
-    ctx.fillText('PRESS  R  TO  RESTART', cx, cy + 38);
+    // Restart hint
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillText('PRESS  R  TO  RESTART', tcx + 1, by + 148 + 1);
+    ctx.fillStyle = '#2A6A8A';
+    ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 148);
 
     ctx.textAlign = 'left';
 }
@@ -606,3 +829,76 @@ document.addEventListener('keydown', e => {
 });
 
 updateGame();
+
+// ── Favicon ───────────────────────────────────────────────────────
+(function generateFavicon() {
+    const S = 32;
+    const fc = document.createElement('canvas');
+    fc.width = fc.height = S;
+    const c = fc.getContext('2d');
+
+    const cream  = '#EDE8DC';
+    const shadow = '#C8BEB0';
+    const pink   = '#F0A0B8';
+    const dpink  = '#D84070';
+    const dark   = '#1A1520';
+
+    // Background — rounded square in the game's sky blue
+    c.fillStyle = '#4A90B8';
+    c.beginPath();
+    c.roundRect(0, 0, S, S, 7);
+    c.fill();
+
+    // Back ear (slightly darker)
+    c.fillStyle = shadow;
+    c.beginPath(); c.roundRect(7, 1, 5, 14, [3,3,2,2]); c.fill();
+    c.fillStyle = pink;
+    c.beginPath(); c.roundRect(8.5, 2.5, 2.5, 10, [2,2,1,1]); c.fill();
+
+    // Front ear
+    c.fillStyle = cream;
+    c.beginPath(); c.roundRect(20, 0, 5, 15, [3,3,2,2]); c.fill();
+    c.fillStyle = pink;
+    c.beginPath(); c.roundRect(21.5, 1.5, 2.5, 11, [2,2,1,1]); c.fill();
+
+    // Head
+    c.fillStyle = cream;
+    c.beginPath(); c.arc(16, 21, 10, 0, Math.PI * 2); c.fill();
+
+    // Snout
+    c.fillStyle = '#F8F6F2';
+    c.beginPath(); c.ellipse(16, 23.5, 4, 3, 0, 0, Math.PI * 2); c.fill();
+
+    // Cheek blush
+    c.fillStyle = 'rgba(240,150,170,0.32)';
+    c.beginPath(); c.ellipse(10.5, 22, 3, 2, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(21.5, 22, 3, 2, 0, 0, Math.PI * 2); c.fill();
+
+    // Eyes
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(12.5, 19.5, 2.5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(19.5, 19.5, 2.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = dark;
+    c.beginPath(); c.arc(13, 19.5, 1.6, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(20, 19.5, 1.6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(13.6, 18.8, 0.6, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(20.6, 18.8, 0.6, 0, Math.PI * 2); c.fill();
+
+    // Nose
+    c.fillStyle = dpink;
+    c.beginPath(); c.ellipse(16, 23, 2, 1.5, 0, 0, Math.PI * 2); c.fill();
+
+    // Mouth
+    c.strokeStyle = 'rgba(160,100,110,0.7)';
+    c.lineWidth = 0.9;
+    c.lineCap = 'round';
+    c.beginPath(); c.arc(14, 25, 2, 0, Math.PI * 0.8); c.stroke();
+    c.beginPath(); c.arc(18, 25, 2, Math.PI * 0.2, Math.PI); c.stroke();
+
+    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.rel  = 'icon';
+    link.type = 'image/png';
+    link.href = fc.toDataURL();
+    document.head.appendChild(link);
+}());
