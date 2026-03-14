@@ -1,6 +1,6 @@
 # Rabbit Run!
 
-![Rabbit Run gameplay](assets/og-bg-rabbit-game.png)
+![Rabbit Run gameplay](assets/rabbit_run_banner.png)
 
 An endless browser game where a rabbit dodges tortoises across a world that travels through a full day, from dawn to deep night.
 
