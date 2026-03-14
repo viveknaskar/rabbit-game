@@ -6,7 +6,7 @@ An endless browser game where a rabbit dodges tortoises across a world that trav
 
 Built with vanilla HTML5 Canvas. No libraries, no build tools, no external assets.
 
-**Play now:** https://viveknaskar.github.io/rabbit-run/
+**Play now:** https://viveknaskar.github.io/rabbit-game/
 
 ---
 
