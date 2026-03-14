@@ -845,70 +845,63 @@ function showGameOverScreen(isNewBest, finalScore) {
 
     ctx.textAlign = 'center';
 
-    // Quote
-    ctx.font = '10px "Press Start 2P", monospace';
-    ctx.fillStyle = '#3A5A6A';
-    ctx.fillText('Slow and steady', tcx, by + 38);
-    ctx.fillText('wins the race!', tcx, by + 58);
+    // ── TOP 5 leaderboard — centered at top ───────────────────────
+    const board = getLeaderboard();
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillStyle = '#7AA0B8';
+    ctx.fillText('TOP  5', tcx, by + 28);
+
+    const rankX  = tcx - 36;
+    const scoreX = tcx + 36;
+    board.slice(0, 5).forEach((s, i) => {
+        const isCurrent = s === finalScore && i === board.indexOf(finalScore);
+        ctx.font = '7px "Press Start 2P", monospace';
+        ctx.fillStyle = isCurrent ? '#C8920A' : '#4A7A9B';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${i + 1}.`, rankX, by + 42 + i * 13);
+        ctx.textAlign = 'right';
+        ctx.fillText(`${s}`, scoreX, by + 42 + i * 13);
+    });
 
     // Divider
+    ctx.textAlign = 'center';
     ctx.strokeStyle = 'rgba(80,120,150,0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(bx + 30, by + 72);
-    ctx.lineTo(bx + bw - 30, by + 72);
+    ctx.moveTo(bx + 30, by + 110);
+    ctx.lineTo(bx + bw - 30, by + 110);
     ctx.stroke();
 
     // GAME OVER
     ctx.font = '18px "Press Start 2P", monospace';
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillText('GAME OVER', tcx + 2, by + 100 + 2);
+    ctx.fillText('GAME OVER', tcx + 2, by + 128 + 2);
     ctx.fillStyle = '#E04040';
-    ctx.fillText('GAME OVER', tcx, by + 100);
+    ctx.fillText('GAME OVER', tcx, by + 128);
 
-    // New best badge or blank space
+    // New best badge
     if (isNewBest) {
         ctx.font = '8px "Press Start 2P", monospace';
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fillText('✦ NEW BEST ✦', tcx + 1, by + 125 + 1);
+        ctx.fillText('✦ NEW BEST ✦', tcx + 1, by + 146 + 1);
         ctx.fillStyle = '#C8920A';
-        ctx.fillText('✦ NEW BEST ✦', tcx, by + 125);
+        ctx.fillText('✦ NEW BEST ✦', tcx, by + 146);
     }
 
     // Restart hint
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillText('PRESS  R  TO  RESTART', tcx + 1, by + 148 + 1);
+    ctx.fillText('PRESS  R  TO  RESTART', tcx + 1, by + 160 + 1);
     ctx.fillStyle = '#2A6A8A';
-    ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 148);
+    ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 160);
 
-    // Show difficulty badge
+    // Difficulty badge — bottom left
     ctx.textAlign = 'left';
     const modeLabel = diffMode.toUpperCase();
     const modeColor = diffMode === 'easy' ? '#2A7A2A' : diffMode === 'hard' ? '#A02020' : '#1E4D6B';
     ctx.font = '6px "Press Start 2P", monospace';
     ctx.fillStyle = modeColor;
-    ctx.fillText('MODE: ' + modeLabel, bx + 12, by + bh - 10);
-
-    // Top 5 leaderboard (right side)
-    const board = getLeaderboard();
-    if (board.length > 0) {
-        const lx = bx + bw - 130, ly = by + 14;
-        const scoreX = lx + 110;
-        ctx.font = '6px "Press Start 2P", monospace';
-        ctx.fillStyle = '#7AA0B8';
-        ctx.textAlign = 'left';
-        ctx.fillText('TOP 5', lx, ly);
-        ctx.textAlign = 'right';
-        board.slice(0, 5).forEach((s, i) => {
-            const isCurrent = s === finalScore && i === board.indexOf(finalScore);
-            ctx.fillStyle = isCurrent ? '#C8920A' : '#4A7A9B';
-            ctx.textAlign = 'left';
-            ctx.fillText(`${i + 1}.`, lx, ly + 14 + i * 14);
-            ctx.textAlign = 'right';
-            ctx.fillText(`${s}`, scoreX, ly + 14 + i * 14);
-        });
-    }
+    ctx.fillText('MODE: ' + modeLabel, bx + 12, by + bh - 8);
 
     ctx.textAlign = 'left';
 }
