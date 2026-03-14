@@ -89,13 +89,24 @@ const AudioManager = (() => {
         currentMelody = null;
     }
 
+    let volume = 0.11; // base volume (maps to slider 100)
+
+    function setVolume(pct) {
+        volume = (pct / 100) * 0.11;
+        if (master && !muted) master.gain.value = volume;
+    }
+
     function toggleMute() {
         muted = !muted;
-        if (master) master.gain.value = muted ? 0 : 0.11;
+        if (master) master.gain.value = muted ? 0 : volume;
         return muted;
     }
 
     function isReady() { return !!actx; }
+
+    function resumeContext() {
+        if (actx && actx.state === 'suspended') actx.resume();
+    }
 
     // ── Sound effects ─────────────────────────────────────────────
 
@@ -125,5 +136,11 @@ const AudioManager = (() => {
         [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => osc(f, 0.13, t + i * 0.14, 'square', 0.26));
     }
 
-    return { init, play, stop, toggleMute, isReady, sfxJump, sfxGameOver, sfxNewBest };
+    function sfxMilestone() {
+        if (!actx || muted) return;
+        const t = actx.currentTime;
+        [N.G5, N.E5, N.G5].forEach((f, i) => osc(f, 0.10, t + i * 0.10, 'triangle', 0.22));
+    }
+
+    return { init, play, stop, toggleMute, setVolume, resumeContext, isReady, sfxJump, sfxGameOver, sfxNewBest, sfxMilestone };
 })();

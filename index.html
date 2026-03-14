@@ -12,6 +12,10 @@
     </div>
     <canvas id="gameCanvas" width="800" height="200"></canvas>
     <p id="hint"><kbd>SPACE</kbd> / TAP to jump &nbsp;|&nbsp; <kbd>P</kbd> to pause &nbsp;|&nbsp; <kbd>R</kbd> to restart &nbsp;|&nbsp; <kbd>M</kbd> to mute</p>
+    <div id="volume-row">
+        <label for="volume-slider" id="volume-label">🔊</label>
+        <input type="range" id="volume-slider" min="0" max="100" value="100" step="1">
+    </div>
 
     <script src="music.js"></script>
     <script src="game.js"></script>

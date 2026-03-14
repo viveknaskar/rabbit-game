@@ -35,12 +35,14 @@ const state = {
         { x: 540, y: 30, r: 52 },
         { x: 730, y: 20, r: 36 },
     ],
-    mtnOff:     0,
-    terrainOff: 0,
-    score:      0,
-    gameSpeed:  6,
-    isGameOver: false,
-    minGap:     350
+    mtnOff:          0,
+    terrainOff:      0,
+    score:           0,
+    gameSpeed:       6,
+    isGameOver:      false,
+    minGap:          350,
+    lastMilestone:   0,
+    milestoneFlash:  0
 };
 
 // ── Day/Night Cycle ───────────────────────────────────────────────
@@ -459,15 +461,15 @@ function updateGame() {
 
     const displayScore = Math.floor(state.score / 5);
 
-    // Progressive difficulty
-    state.gameSpeed = Math.min(6 + displayScore * 0.022, 15);
+    // Progressive difficulty — capped to keep the game playable at high scores
+    state.gameSpeed = Math.min(6 + displayScore * 0.022, 12);
 
     // Switch music theme with day/night cycle
     if (AudioManager.isReady()) {
         AudioManager.play(getDayTime(displayScore) >= 0.85 ? 'night' : 'day');
     }
-    state.minGap    = Math.max(350 - displayScore * 0.5, 180);
-    const spawnChance = Math.min(0.02 + displayScore * 0.00006, 0.045);
+    state.minGap    = Math.max(350 - displayScore * 0.5, 220);
+    const spawnChance = Math.min(0.02 + displayScore * 0.00006, 0.038);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -528,6 +530,30 @@ function updateGame() {
 
     state.score++;
     scoreEl.textContent = displayScore;
+
+    // Score milestone check (every 100 points up to 1000, then every 500)
+    const MILESTONES = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 3000];
+    for (const m of MILESTONES) {
+        if (displayScore >= m && state.lastMilestone < m) {
+            state.lastMilestone  = m;
+            state.milestoneFlash = 22;
+            AudioManager.sfxMilestone();
+            break;
+        }
+    }
+
+    // Draw milestone flash ring
+    if (state.milestoneFlash > 0) {
+        const alpha = (state.milestoneFlash / 22) * 0.45;
+        ctx.strokeStyle = `rgba(255,230,80,${alpha.toFixed(2)})`;
+        ctx.lineWidth   = 6;
+        const progress  = 1 - state.milestoneFlash / 22;
+        const radius    = 20 + progress * 180;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        state.milestoneFlash--;
+    }
 
     requestAnimationFrame(updateGame);
 }
@@ -735,21 +761,7 @@ function drawGameOverRabbit(anchorX, anchorY) {
     ctx.restore();
 }
 
-function gameOver() {
-    state.isGameOver = true;
-
-    const finalScore = Math.floor(state.score / 5);
-    const isNewBest  = finalScore > highScore;
-    if (isNewBest) {
-        highScore = finalScore;
-        localStorage.setItem('rabbitHighScore', highScore);
-        bestEl.textContent = highScore;
-        AudioManager.sfxNewBest();
-    } else {
-        AudioManager.sfxGameOver();
-    }
-    AudioManager.stop();
-
+function showGameOverScreen(isNewBest, finalScore) {
     // Dark overlay
     ctx.fillStyle = 'rgba(8, 22, 40, 0.78)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -824,6 +836,36 @@ function gameOver() {
     ctx.textAlign = 'left';
 }
 
+function gameOver() {
+    state.isGameOver = true;
+
+    const finalScore = Math.floor(state.score / 5);
+    const isNewBest  = finalScore > highScore;
+    if (isNewBest) {
+        highScore = finalScore;
+        localStorage.setItem('rabbitHighScore', highScore);
+        bestEl.textContent = highScore;
+        AudioManager.sfxNewBest();
+    } else {
+        AudioManager.sfxGameOver();
+    }
+    AudioManager.stop();
+
+    // Brief white flash before the overlay
+    let flashAlpha = 0.7;
+    function flash() {
+        ctx.fillStyle = `rgba(255,255,255,${flashAlpha.toFixed(2)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        flashAlpha -= 0.07;
+        if (flashAlpha > 0) {
+            requestAnimationFrame(flash);
+        } else {
+            showGameOverScreen(isNewBest, finalScore);
+        }
+    }
+    requestAnimationFrame(flash);
+}
+
 function resetGame() {
     state.obstacles        = [];
     state.score            = 0;
@@ -834,6 +876,8 @@ function resetGame() {
     state.rabbit.isJumping = false;
     state.isGameOver       = false;
     state.isPaused         = false;
+    state.lastMilestone    = 0;
+    state.milestoneFlash   = 0;
     updateGame();
 }
 
@@ -863,6 +907,25 @@ document.addEventListener('keydown', e => {
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && !state.isGameOver && !state.isPaused) {
         togglePause();
+    }
+});
+
+window.addEventListener('focus', () => {
+    if (AudioManager.isReady()) AudioManager.resumeContext();
+});
+
+document.getElementById('volume-slider').addEventListener('input', e => {
+    const pct = parseInt(e.target.value, 10);
+    document.getElementById('volume-label').textContent = pct === 0 ? '🔇' : '🔊';
+    AudioManager.setVolume(pct);
+    if (pct === 0 && !AudioManager.isReady()) return;
+    // Unmute if dragging slider back up while muted
+    if (pct > 0) {
+        const label = document.getElementById('best-label');
+        if (label.textContent === 'MUTED') {
+            AudioManager.toggleMute();
+            label.textContent = 'BEST';
+        }
     }
 });
 
