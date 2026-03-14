@@ -1,5 +1,7 @@
 # Rabbit Run!
 
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+
 ![Rabbit Run gameplay](assets/rabbit_run_banner.png)
 
 An endless browser game where a rabbit dodges tortoises across a world that travels through a full day:from dawn to deep night.
@@ -52,10 +54,6 @@ open index.html
 
 ---
 
-## Tests
+## License
 
-Unit tests cover colour interpolation, collision detection, scoring, leaderboard logic, difficulty profiles, and physics. No dependencies required — runs with Node.js.
-
-```bash
-node tests/game.test.js
-```
+MIT © [Vivek Naskar](https://github.com/viveknaskar)
