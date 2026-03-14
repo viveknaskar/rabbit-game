@@ -28,6 +28,7 @@ const state = {
         blinkTimer: 0
     },
     obstacles: [],
+    isPaused: false,
     clouds: [
         { x: 110, y: 24, r: 42 },
         { x: 330, y: 16, r: 32 },
@@ -437,8 +438,24 @@ function drawTortoise(obs) {
 
 // ── Game loop ─────────────────────────────────────────────────────
 
+function drawPauseOverlay() {
+    ctx.fillStyle = 'rgba(8, 22, 40, 0.65)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+    ctx.font = '18px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillText('PAUSED', canvas.width / 2 + 2, canvas.height / 2 + 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#A8D8F0';
+    ctx.fillText('PRESS  P  TO  RESUME', canvas.width / 2, canvas.height / 2 + 28);
+    ctx.textAlign = 'left';
+}
+
 function updateGame() {
     if (state.isGameOver) return;
+    if (state.isPaused) return;
 
     const displayScore = Math.floor(state.score / 5);
 
@@ -816,17 +833,48 @@ function resetGame() {
     state.rabbit.velocity  = 0;
     state.rabbit.isJumping = false;
     state.isGameOver       = false;
+    state.isPaused         = false;
     updateGame();
 }
 
+function togglePause() {
+    if (state.isGameOver) return;
+    state.isPaused = !state.isPaused;
+    if (state.isPaused) {
+        AudioManager.stop();
+        drawPauseOverlay();
+    } else {
+        const displayScore = Math.floor(state.score / 5);
+        AudioManager.play(getDayTime(displayScore) >= 0.85 ? 'night' : 'day');
+        requestAnimationFrame(updateGame);
+    }
+}
+
 document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && !state.isGameOver) jump();
+    if (e.code === 'Space' && !state.isGameOver && !state.isPaused) jump();
     if (e.key.toLowerCase() === 'r' && state.isGameOver) resetGame();
+    if (e.key.toLowerCase() === 'p') togglePause();
     if (e.key.toLowerCase() === 'm') {
         const nowMuted = AudioManager.toggleMute();
         document.getElementById('best-label').textContent = nowMuted ? 'MUTED' : 'BEST';
     }
 });
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !state.isGameOver && !state.isPaused) {
+        togglePause();
+    }
+});
+
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    AudioManager.init();
+    if (state.isGameOver) {
+        resetGame();
+    } else {
+        jump();
+    }
+}, { passive: false });
 
 updateGame();
 

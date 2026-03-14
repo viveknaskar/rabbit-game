@@ -5,6 +5,9 @@ canvas {
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     display: block;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
 }
 
 body {
@@ -14,6 +17,19 @@ body {
     margin: 20px;
     background: #B8D8EA;
     gap: 12px;
+}
+
+@media (max-width: 840px) {
+    body {
+        margin: 10px;
+        gap: 8px;
+    }
+    #hint {
+        font-size: 11px;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
 }
 
 #hud {
