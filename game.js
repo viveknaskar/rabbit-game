@@ -21,8 +21,8 @@ const state = {
         x: 50, y: 140,
         width: 50, height: 60,
         velocity: 0,
-        gravity: 0.8,
-        jumpForce: -16,
+        gravity: 2880,    // px/s² (was 0.8/frame² at 60fps → 0.8×60² = 2880)
+        jumpForce: -960,  // px/s  (was -16/frame at 60fps → -16×60 = -960)
         isJumping: false,
         legFrame: 0,
         blinkTimer: 0
@@ -440,6 +440,8 @@ function drawTortoise(obs) {
 
 // ── Game loop ─────────────────────────────────────────────────────
 
+let lastTimestamp = performance.now();
+
 function drawPauseOverlay() {
     ctx.fillStyle = 'rgba(8, 22, 40, 0.65)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -451,13 +453,18 @@ function drawPauseOverlay() {
     ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = '#A8D8F0';
-    ctx.fillText('PRESS  P  TO  RESUME', canvas.width / 2, canvas.height / 2 + 28);
+    ctx.fillText('PRESS  R  TO  RESUME', canvas.width / 2, canvas.height / 2 + 28);
     ctx.textAlign = 'left';
 }
 
-function updateGame() {
+function updateGame(timestamp = performance.now()) {
     if (state.isGameOver) return;
     if (state.isPaused) return;
+
+    // Delta time in seconds — clamped: floor 0 prevents negative dt from rAF
+    // timing quirks; ceiling 0.033 (~2 frames) prevents physics explosion after pauses
+    const dt = Math.max(0, Math.min((timestamp - lastTimestamp) / 1000, 0.033));
+    lastTimestamp = timestamp;
 
     const displayScore = Math.floor(state.score / 5);
 
@@ -473,10 +480,11 @@ function updateGame() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    state.mtnOff     += state.gameSpeed;
-    state.terrainOff += state.gameSpeed;
+    const speedPx = state.gameSpeed * 60 * dt;  // convert speed to px this frame
+    state.mtnOff     += speedPx;
+    state.terrainOff += speedPx;
     for (const c of state.clouds) {
-        c.x -= 0.75;
+        c.x -= 0.75 * 60 * dt;
         if (c.x + c.r * 2 < 0) {
             c.x = canvas.width + c.r;
             c.y = 12 + Math.random() * 36;
@@ -486,9 +494,9 @@ function updateGame() {
 
     drawBackground();
 
-    // Update rabbit
-    state.rabbit.velocity += state.rabbit.gravity;
-    state.rabbit.y        += state.rabbit.velocity;
+    // Update rabbit (delta-time physics)
+    state.rabbit.velocity += state.rabbit.gravity * dt;
+    state.rabbit.y        += state.rabbit.velocity * dt;
 
     if (state.rabbit.y >= 140) {
         state.rabbit.y         = 140;
@@ -497,8 +505,8 @@ function updateGame() {
         state.rabbit.legFrame++;
     }
 
-    state.rabbit.blinkTimer--;
-    if (Math.random() < 0.005) state.rabbit.blinkTimer = 10;
+    state.rabbit.blinkTimer -= 60 * dt;
+    if (Math.random() < 0.005 * 60 * dt) state.rabbit.blinkTimer = 10;
 
     // Spawn tortoises
     const last = state.obstacles[state.obstacles.length - 1];
@@ -509,8 +517,8 @@ function updateGame() {
 
     // Update & draw tortoises
     state.obstacles.forEach(obs => {
-        obs.x -= state.gameSpeed;
-        obs.legFrame++;
+        obs.x -= speedPx;
+        obs.legFrame += 60 * dt;
         drawTortoise(obs);
 
         if (state.rabbit.x + 40 > obs.x &&
@@ -528,7 +536,7 @@ function updateGame() {
     drawGround();
     drawRabbit();
 
-    state.score++;
+    state.score += 60 * dt;
     scoreEl.textContent = displayScore;
 
     // Score milestone check (every 100 points up to 1000, then every 500)
@@ -878,6 +886,7 @@ function resetGame() {
     state.isPaused         = false;
     state.lastMilestone    = 0;
     state.milestoneFlash   = 0;
+    lastTimestamp          = performance.now();
     updateGame();
 }
 
@@ -890,13 +899,17 @@ function togglePause() {
     } else {
         const displayScore = Math.floor(state.score / 5);
         AudioManager.play(getDayTime(displayScore) >= 0.85 ? 'night' : 'day');
+        lastTimestamp = performance.now();
         requestAnimationFrame(updateGame);
     }
 }
 
 document.addEventListener('keydown', e => {
     if (e.code === 'Space' && !state.isGameOver && !state.isPaused) jump();
-    if (e.key.toLowerCase() === 'r' && state.isGameOver) resetGame();
+    if (e.key.toLowerCase() === 'r') {
+        if (state.isGameOver) resetGame();
+        else if (state.isPaused) togglePause();
+    }
     if (e.key.toLowerCase() === 'p') togglePause();
     if (e.key.toLowerCase() === 'm') {
         const nowMuted = AudioManager.toggleMute();
