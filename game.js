@@ -893,15 +893,20 @@ function showGameOverScreen(isNewBest, finalScore) {
     // Top 5 leaderboard (right side)
     const board = getLeaderboard();
     if (board.length > 0) {
-        const lx = bx + bw - 138, ly = by + 14;
+        const lx = bx + bw - 130, ly = by + 14;
+        const scoreX = lx + 110;
         ctx.font = '6px "Press Start 2P", monospace';
         ctx.fillStyle = '#7AA0B8';
         ctx.textAlign = 'left';
         ctx.fillText('TOP 5', lx, ly);
+        ctx.textAlign = 'right';
         board.slice(0, 5).forEach((s, i) => {
             const isCurrent = s === finalScore && i === board.indexOf(finalScore);
             ctx.fillStyle = isCurrent ? '#C8920A' : '#4A7A9B';
-            ctx.fillText(`${i + 1}. ${s}`, lx, ly + 14 + i * 14);
+            ctx.textAlign = 'left';
+            ctx.fillText(`${i + 1}.`, lx, ly + 14 + i * 14);
+            ctx.textAlign = 'right';
+            ctx.fillText(`${s}`, scoreX, ly + 14 + i * 14);
         });
     }
 

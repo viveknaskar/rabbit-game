@@ -98,6 +98,15 @@ body {
     border-radius: 4px;
 }
 
+#game-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 22px;
+    color: #1E4D6B;
+    margin: 0;
+    text-shadow: 2px 2px 0px rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+}
+
 #diff-title {
     font-family: 'Press Start 2P', monospace;
     font-size: 13px;
