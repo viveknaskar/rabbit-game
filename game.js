@@ -820,7 +820,7 @@ function showGameOverScreen(isNewBest, finalScore) {
     drawGameOverRabbit(90, 76);   // feet land on top of tortoise shell (y≈76)
 
     // ── Speech bubble ─────────────────────────────────────────────
-    const bx = 148, by = 18, bw = 638, bh = 164, br = 14;
+    const bx = 148, by = 18, bw = 638, bh = 175, br = 14;
     const tailMidY = 108;
 
     // Tail triangle pointing left toward tortoise
@@ -845,55 +845,71 @@ function showGameOverScreen(isNewBest, finalScore) {
 
     ctx.textAlign = 'center';
 
-    // ── TOP 5 leaderboard — centered at top ───────────────────────
-    const board = getLeaderboard();
+    // ── Left: Quote ───────────────────────────────────────────────
+    ctx.textAlign = 'left';
+    ctx.font = '12px "Press Start 2P", monospace';
+    ctx.fillStyle = '#3A5A6A';
+    ctx.fillText('Slow and',   bx + 20, by + 38);
+    ctx.fillText('steady',     bx + 20, by + 54);
+    ctx.fillText('wins the',   bx + 20, by + 70);
+    ctx.fillText('race!',      bx + 20, by + 86);
+
+    // ── Right: TOP 5 leaderboard ──────────────────────────────────
+    const board  = getLeaderboard();
+    const rCx    = bx + bw * 3 / 4;   // center of right half
+    const rankX  = rCx - 44;
+    const scoreX = rCx + 44;
     ctx.font = '7px "Press Start 2P", monospace';
     ctx.fillStyle = '#7AA0B8';
-    ctx.fillText('TOP  5', tcx, by + 28);
-
-    const rankX  = tcx - 36;
-    const scoreX = tcx + 36;
+    ctx.textAlign = 'center';
+    ctx.fillText('TOP  5', rCx, by + 24);
     board.slice(0, 5).forEach((s, i) => {
         const isCurrent = s === finalScore && i === board.indexOf(finalScore);
         ctx.font = '7px "Press Start 2P", monospace';
         ctx.fillStyle = isCurrent ? '#C8920A' : '#4A7A9B';
         ctx.textAlign = 'left';
-        ctx.fillText(`${i + 1}.`, rankX, by + 42 + i * 13);
+        ctx.fillText(`${i + 1}.`, rankX, by + 38 + i * 12);
         ctx.textAlign = 'right';
-        ctx.fillText(`${s}`, scoreX, by + 42 + i * 13);
+        ctx.fillText(`${s}`,      scoreX, by + 38 + i * 12);
     });
 
-    // Divider
-    ctx.textAlign = 'center';
-    ctx.strokeStyle = 'rgba(80,120,150,0.25)';
+    // Vertical divider between quote and leaderboard
+    ctx.strokeStyle = 'rgba(80,120,150,0.20)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(bx + 30, by + 110);
-    ctx.lineTo(bx + bw - 30, by + 110);
+    ctx.moveTo(bx + bw / 2, by + 14);
+    ctx.lineTo(bx + bw / 2, by + 96);
+    ctx.stroke();
+
+    // Horizontal divider
+    ctx.beginPath();
+    ctx.moveTo(bx + 30, by + 100);
+    ctx.lineTo(bx + bw - 30, by + 100);
     ctx.stroke();
 
     // GAME OVER
-    ctx.font = '18px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.font = '16px "Press Start 2P", monospace';
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillText('GAME OVER', tcx + 2, by + 128 + 2);
+    ctx.fillText('GAME OVER', tcx + 2, by + 118 + 2);
     ctx.fillStyle = '#E04040';
-    ctx.fillText('GAME OVER', tcx, by + 128);
+    ctx.fillText('GAME OVER', tcx, by + 118);
 
     // New best badge
     if (isNewBest) {
         ctx.font = '8px "Press Start 2P", monospace';
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fillText('✦ NEW BEST ✦', tcx + 1, by + 146 + 1);
+        ctx.fillText('✦ NEW BEST ✦', tcx + 1, by + 134 + 1);
         ctx.fillStyle = '#C8920A';
-        ctx.fillText('✦ NEW BEST ✦', tcx, by + 146);
+        ctx.fillText('✦ NEW BEST ✦', tcx, by + 134);
     }
 
     // Restart hint
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillText('PRESS  R  TO  RESTART', tcx + 1, by + 160 + 1);
+    ctx.fillText('PRESS  R  TO  RESTART', tcx + 1, by + 152 + 1);
     ctx.fillStyle = '#2A6A8A';
-    ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 160);
+    ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 152);
 
     // Difficulty badge — bottom left
     ctx.textAlign = 'left';
