@@ -1,6 +1,6 @@
 # Rabbit Run!
 
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg) ![Views](https://visitor-badge.laobi.icu/badge?page_id=viveknaskar.rabbit-game)
 
 ![Rabbit Run gameplay](assets/rabbit_run_banner.png)
 
