@@ -1,10 +1,50 @@
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        const [tl, tr, br, bl] = Array.isArray(r)
+            ? [r[0]??0, r[1]??0, r[2]??0, r[3]??0]
+            : [r, r, r, r];
+        this.moveTo(x + tl, y);
+        this.lineTo(x + w - tr, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + tr);
+        this.lineTo(x + w, y + h - br);
+        this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+        this.lineTo(x + bl, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - bl);
+        this.lineTo(x, y + tl);
+        this.quadraticCurveTo(x, y, x + tl, y);
+        this.closePath();
+        return this;
+    };
+}
+
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 const scoreEl  = document.getElementById('score-value');
 const bestEl   = document.getElementById('best-value');
 
+const DIFFICULTY = {
+    easy:   { speedBase: 4,  speedMax: 9,  gapStart: 420, gapMin: 280, spawnBase: 0.014, spawnMax: 0.030 },
+    normal: { speedBase: 6,  speedMax: 12, gapStart: 350, gapMin: 220, spawnBase: 0.020, spawnMax: 0.038 },
+    hard:   { speedBase: 8,  speedMax: 14, gapStart: 280, gapMin: 180, spawnBase: 0.028, spawnMax: 0.050 },
+};
+let diffMode = 'normal';
+
 let highScore = parseInt(localStorage.getItem('rabbitHighScore') || '0', 10);
 bestEl.textContent = highScore;
+
+function getLeaderboard() {
+    try { return JSON.parse(localStorage.getItem('rabbitLeaderboard') || '[]'); }
+    catch { return []; }
+}
+
+function saveLeaderboard(score) {
+    const board = getLeaderboard();
+    board.push(score);
+    board.sort((a, b) => b - a);
+    const top5 = board.slice(0, 5);
+    localStorage.setItem('rabbitLeaderboard', JSON.stringify(top5));
+    return top5;
+}
 
 const FAR_PEAKS  = [[0,158],[65,118],[140,142],[230,103],[320,126],[410,108],[500,136],[600,158]];
 const NEAR_PEAKS = [[0,183],[95,158],[205,174],[315,152],[420,170],[500,183]];
@@ -468,15 +508,16 @@ function updateGame(timestamp = performance.now()) {
 
     const displayScore = Math.floor(state.score / 5);
 
-    // Progressive difficulty — capped to keep the game playable at high scores
-    state.gameSpeed = Math.min(6 + displayScore * 0.022, 12);
+    // Progressive difficulty — scaled by selected mode
+    const diff = DIFFICULTY[diffMode];
+    state.gameSpeed = Math.min(diff.speedBase + displayScore * 0.022, diff.speedMax);
 
     // Switch music theme with day/night cycle
     if (AudioManager.isReady()) {
         AudioManager.play(getDayTime(displayScore) >= 0.85 ? 'night' : 'day');
     }
-    state.minGap    = Math.max(350 - displayScore * 0.5, 220);
-    const spawnChance = Math.min(0.02 + displayScore * 0.00006, 0.038);
+    state.minGap    = Math.max(diff.gapStart - displayScore * 0.5, diff.gapMin);
+    const spawnChance = Math.min(diff.spawnBase + displayScore * 0.00006, diff.spawnMax);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -841,6 +882,29 @@ function showGameOverScreen(isNewBest, finalScore) {
     ctx.fillStyle = '#2A6A8A';
     ctx.fillText('PRESS  R  TO  RESTART', tcx, by + 148);
 
+    // Show difficulty badge
+    ctx.textAlign = 'left';
+    const modeLabel = diffMode.toUpperCase();
+    const modeColor = diffMode === 'easy' ? '#2A7A2A' : diffMode === 'hard' ? '#A02020' : '#1E4D6B';
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.fillStyle = modeColor;
+    ctx.fillText('MODE: ' + modeLabel, bx + 12, by + bh - 10);
+
+    // Top 5 leaderboard (right side)
+    const board = getLeaderboard();
+    if (board.length > 0) {
+        const lx = bx + bw - 138, ly = by + 14;
+        ctx.font = '6px "Press Start 2P", monospace';
+        ctx.fillStyle = '#7AA0B8';
+        ctx.textAlign = 'left';
+        ctx.fillText('TOP 5', lx, ly);
+        board.slice(0, 5).forEach((s, i) => {
+            const isCurrent = s === finalScore && i === board.indexOf(finalScore);
+            ctx.fillStyle = isCurrent ? '#C8920A' : '#4A7A9B';
+            ctx.fillText(`${i + 1}. ${s}`, lx, ly + 14 + i * 14);
+        });
+    }
+
     ctx.textAlign = 'left';
 }
 
@@ -858,6 +922,7 @@ function gameOver() {
         AudioManager.sfxGameOver();
     }
     AudioManager.stop();
+    saveLeaderboard(finalScore);
 
     // Brief white flash before the overlay
     let flashAlpha = 0.7;
@@ -875,10 +940,11 @@ function gameOver() {
 }
 
 function resetGame() {
+    const diff             = DIFFICULTY[diffMode];
     state.obstacles        = [];
     state.score            = 0;
-    state.gameSpeed        = 6;
-    state.minGap           = 350;
+    state.gameSpeed        = diff.speedBase;
+    state.minGap           = diff.gapStart;
     state.rabbit.y         = 140;
     state.rabbit.velocity  = 0;
     state.rabbit.isJumping = false;
@@ -952,10 +1018,36 @@ canvas.addEventListener('touchstart', e => {
     }
 }, { passive: false });
 
-updateGame();
+// Draw a static preview so the canvas isn't blank behind the difficulty overlay
+drawBackground();
+drawGround();
+drawRabbit();
+
+// ── Difficulty screen ─────────────────────────────────────────────
+const diffScreen = document.getElementById('difficulty-screen');
+document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        diffMode = btn.dataset.mode;
+        diffScreen.style.display = 'none';
+        const diff = DIFFICULTY[diffMode];
+        state.gameSpeed = diff.speedBase;
+        state.minGap    = diff.gapStart;
+        lastTimestamp   = performance.now();
+        canvas.focus();
+        updateGame();
+    });
+});
 
 // ── Favicon ───────────────────────────────────────────────────────
 (function generateFavicon() {
+    const CACHE_KEY = 'rabbitFaviconDataURL';
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.rel = 'icon'; link.type = 'image/png'; link.href = cached;
+        document.head.appendChild(link);
+        return;
+    }
     const S = 32;
     const fc = document.createElement('canvas');
     fc.width = fc.height = S;
@@ -1020,9 +1112,11 @@ updateGame();
     c.beginPath(); c.arc(14, 25, 2, 0, Math.PI * 0.8); c.stroke();
     c.beginPath(); c.arc(18, 25, 2, Math.PI * 0.2, Math.PI); c.stroke();
 
+    const dataURL = fc.toDataURL();
+    localStorage.setItem(CACHE_KEY, dataURL);
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
     link.rel  = 'icon';
     link.type = 'image/png';
-    link.href = fc.toDataURL();
+    link.href = dataURL;
     document.head.appendChild(link);
 }());
